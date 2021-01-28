@@ -1,6 +1,7 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
+    <h1 :style="{ '--color': 'red' }">{{ msg }}</h1>
+    <h1>I shouldn't be red!</h1>
     <p>
       For a guide and recipes on how to configure / customize this project,<br />
       check out the
@@ -115,6 +116,10 @@ export default defineComponent({
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+h1 {
+  color: var(--color);
+}
+
 h3 {
   margin: 40px 0 0;
 }
