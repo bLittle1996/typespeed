@@ -10,7 +10,7 @@
 
 <script lang="ts">
 import { getRandomWords } from "@/utils/words";
-import { defineComponent, ref } from "vue";
+import { computed, defineComponent, ref } from "vue";
 
 /**
  * This component is responsible for managing the state of the typing test.
@@ -20,6 +20,7 @@ export default defineComponent({
     const wordsToType = ref(getRandomWords(100));
     const currentWordIndex = ref(0);
     const userInput = ref("");
+    const lowerCaseInput = computed(() => userInput.value.toLowerCase());
 
     /**
      * When the user enters a space, we want to move onto the next word in the list.
