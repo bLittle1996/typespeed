@@ -6,3 +6,7 @@ export type UserResponse = {
 export type UserResponseMap = {
   [wordIndex: number]: UserResponse | undefined;
 };
+
+export type UserMetrics = {
+  charactersTyped: number;
+};
