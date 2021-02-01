@@ -26,7 +26,6 @@ export default defineComponent({
      */
     const handleSpaceKeypress = () => {
       // If they haven't typed anything yet, don't move onto the next word.
-      console.log({ userInput, currentWordIndex, wordsToType });
       if (userInput.value === "") return;
       // increment index, and reset user input
       currentWordIndex.value += 1;
