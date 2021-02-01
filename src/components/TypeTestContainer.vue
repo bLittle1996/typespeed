@@ -1,7 +1,10 @@
 <template>
   <div>
     <pre>{{ wordsToType.join(" ") }}</pre>
-    <input v-model="userInput" @keypress.space.prevent="handleSpaceKeypress" />
+    <input
+      v-model.trim="userInput"
+      @keypress.space.prevent="handleSpaceKeypress"
+    />
   </div>
 </template>
 
