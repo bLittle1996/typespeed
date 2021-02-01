@@ -17,8 +17,9 @@ import { computed, defineComponent, ref } from "vue";
  */
 export default defineComponent({
   setup() {
-    const wordsToType = ref(getRandomWords(100));
-    const currentWordIndex = ref(0);
+    const wordsToType = ref(getRandomWords(100)); // words the user ought to type
+    const typedWords = ref<string[]>([]); // words the user has typed (mistakes and all)
+    const currentWordIndex = ref(0); // the current word being typed
     const userInput = ref("");
     const lowerCaseInput = computed(() => userInput.value.toLowerCase());
 
@@ -31,6 +32,8 @@ export default defineComponent({
     const handleSpaceKeypress = () => {
       // If they haven't typed anything yet, don't move onto the next word.
       if (userInput.value === "") return;
+      // store user response
+      typedWords.value[currentWordIndex.value] = lowerCaseInput.value;
       // increment index, and reset user input
       currentWordIndex.value += 1;
       userInput.value = "";
