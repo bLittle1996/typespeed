@@ -44,7 +44,7 @@ export default defineComponent({
     background: lightgrey;
   }
 
-  &.correct {
+  &.correct:not(.active) {
     color: green;
   }
 
