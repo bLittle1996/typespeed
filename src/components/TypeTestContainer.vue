@@ -1,6 +1,10 @@
 <template>
   <div>
-    <pre>{{ wordsToType.join(" ") }}</pre>
+    <Words
+      :words="wordsToType"
+      :currentWordIndex="currentWordIndex"
+      :userInputHistory="typedWords"
+    />
     <input
       v-model.trim="userInput"
       @keypress.space.prevent="handleSpaceKeypress"
@@ -10,18 +14,22 @@
 
 <script lang="ts">
 import { getRandomWords } from "@/utils/words";
-import { computed, defineComponent, ref } from "vue";
+import { computed, defineComponent, ref, watch } from "vue";
+import Words from "./words/Words.vue";
 
 /**
  * This component is responsible for managing the state of the typing test.
  */
 export default defineComponent({
+  components: { Words },
   setup() {
-    const wordsToType = ref(getRandomWords(100)); // words the user ought to type
+    const wordsToType = ref<string[]>(getRandomWords(100)); // words the user ought to type
     const typedWords = ref<string[]>([]); // words the user has typed (mistakes and all)
-    const currentWordIndex = ref(0); // the current word being typed
-    const userInput = ref("");
-    const lowerCaseInput = computed(() => userInput.value.toLowerCase());
+    const currentWordIndex = ref<number>(0); // the current word being typed
+    const userInput = ref<string>("");
+    const lowerCaseInput = computed<string>(() =>
+      userInput.value.toLowerCase()
+    );
 
     /**
      * When the user enters a space, we want to move onto the next word in the list.
@@ -44,7 +52,26 @@ export default defineComponent({
       }
     };
 
-    return { wordsToType, currentWordIndex, userInput, handleSpaceKeypress };
+    watch(
+      [lowerCaseInput, currentWordIndex],
+      ([typedString, wordIndex], [, oldWordIndex]) => {
+        // if the input got reset from moving onto the next word, we shouldn't do anything
+        if (!typedString && wordIndex !== oldWordIndex) return;
+        // So while initially compiling, TypeScript thinks our values are Ref<unknown>
+        // We'll add a type guard to convince TypeScript that thy are the correct types
+        if (typeof wordIndex === "number" && typeof typedString === "string") {
+          typedWords.value[wordIndex] = typedString;
+        }
+      }
+    );
+
+    return {
+      wordsToType,
+      currentWordIndex,
+      userInput,
+      typedWords,
+      handleSpaceKeypress
+    };
   }
 });
 </script>
