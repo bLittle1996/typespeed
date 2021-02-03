@@ -9,6 +9,7 @@
       v-model.trim="userInput"
       @keypress.space.prevent="handleSpaceKeypress"
     />
+    <span>{{ `${testRemainingTime / 1000}`.split(".")[0] }}</span>
   </div>
 </template>
 
@@ -30,6 +31,8 @@ export default defineComponent({
     const lowerCaseInput = computed<string>(() =>
       userInput.value.toLowerCase()
     );
+    const isTestRunning = ref<boolean>(false);
+    const testRemainingTime = ref<number>(60 * 1000); // in milliseconds
 
     /**
      * When the user enters a space, we want to move onto the next word in the list.
@@ -52,6 +55,7 @@ export default defineComponent({
       }
     };
 
+    // Store the users typed words in an array mirroring the wordsToType
     watch(
       [lowerCaseInput, currentWordIndex],
       ([typedString, wordIndex], [, oldWordIndex]) => {
@@ -65,12 +69,46 @@ export default defineComponent({
       }
     );
 
+    // If the user types something, then we will want to start the test (if it is not already started)
+    // In a similar vein, if the remaining time reaches zero, we ought to stop the test
+    watch([userInput, testRemainingTime], () => {
+      if (!isTestRunning.value) {
+        isTestRunning.value = true;
+      } else if (testRemainingTime.value <= 0) {
+        isTestRunning.value = false;
+      }
+    });
+
+    // when the test starts and stops, manage the timer effectively.
+    watch([isTestRunning], () => {
+      if (isTestRunning.value) {
+        console.log("STARTING THE TEST");
+        let lastStepTime = performance.now();
+        const step = (currentTime: number) => {
+          const deltaTime = currentTime - lastStepTime;
+          const remainingTime = testRemainingTime.value - deltaTime;
+
+          if (remainingTime <= 0) {
+            console.log("STOP THE TEST");
+            isTestRunning.value = false;
+          } else {
+            lastStepTime = currentTime;
+            testRemainingTime.value = remainingTime;
+            requestAnimationFrame(step);
+          }
+        };
+
+        requestAnimationFrame(step);
+      }
+    });
+
     return {
       wordsToType,
       currentWordIndex,
       userInput,
       typedWords,
-      handleSpaceKeypress
+      handleSpaceKeypress,
+      testRemainingTime
     };
   }
 });
