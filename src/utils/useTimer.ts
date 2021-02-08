@@ -66,7 +66,7 @@ export const useTimer = (durationInMs: number): Timer => {
   watch([isRunning], () => {
     if (!isRunning.value) return;
     let lastTimestamp = performance.now();
-    const tick = (timestamp) => {
+    const tick = (timestamp: number) => {
       const deltaTime = timestamp - lastTimestamp;
       // Update the last timestamp so delta time works correctly between ticks.
       lastTimestamp = timestamp;

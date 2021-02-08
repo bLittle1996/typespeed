@@ -9,11 +9,12 @@
       v-model.trim="userInput"
       @keypress.space.prevent="handleSpaceKeypress"
     />
-    <span>{{ `${testRemainingTime / 1000}`.split(".")[0] }}</span>
+    <span>{{ `${remainingTime / 1000}`.split(".")[0] }}</span>
   </div>
 </template>
 
 <script lang="ts">
+import { useTimer } from "@/utils/useTimer";
 import { getRandomWords } from "@/utils/words";
 import { computed, defineComponent, ref, watch } from "vue";
 import Words from "./words/Words.vue";
@@ -32,7 +33,7 @@ export default defineComponent({
       userInput.value.toLowerCase()
     );
     const isTestRunning = ref<boolean>(false);
-    const testRemainingTime = ref<number>(60 * 1000); // in milliseconds
+    const timer = useTimer(6000);
 
     /**
      * When the user enters a space, we want to move onto the next word in the list.
@@ -71,10 +72,12 @@ export default defineComponent({
 
     // If the user types something, then we will want to start the test (if it is not already started)
     // In a similar vein, if the remaining time reaches zero, we ought to stop the test
-    watch([userInput, testRemainingTime], () => {
+    watch([userInput, timer.remainingTime], () => {
       if (!isTestRunning.value) {
+        console.log("Test running");
         isTestRunning.value = true;
-      } else if (testRemainingTime.value <= 0) {
+      } else if (timer.remainingTime.value <= 0) {
+        console.log("Test stopping, time elapsed.");
         isTestRunning.value = false;
       }
     });
@@ -82,23 +85,11 @@ export default defineComponent({
     // when the test starts and stops, manage the timer effectively.
     watch([isTestRunning], () => {
       if (isTestRunning.value) {
-        console.log("STARTING THE TEST");
-        let lastStepTime = performance.now();
-        const step = (currentTime: number) => {
-          const deltaTime = currentTime - lastStepTime;
-          const remainingTime = testRemainingTime.value - deltaTime;
-
-          if (remainingTime <= 0) {
-            console.log("STOP THE TEST");
-            isTestRunning.value = false;
-          } else {
-            lastStepTime = currentTime;
-            testRemainingTime.value = remainingTime;
-            requestAnimationFrame(step);
-          }
-        };
-
-        requestAnimationFrame(step);
+        console.log("Starting timer.");
+        timer.startTimer();
+      } else {
+        console.log("Pausing timer.");
+        timer.pauseTimer();
       }
     });
 
@@ -108,7 +99,7 @@ export default defineComponent({
       userInput,
       typedWords,
       handleSpaceKeypress,
-      testRemainingTime
+      remainingTime: timer.remainingTime
     };
   }
 });
