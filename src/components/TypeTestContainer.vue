@@ -6,10 +6,15 @@
       :userInputHistory="typedWords"
     />
     <input
+      @keydown="startTest"
       v-model.trim="userInput"
       @keypress.space.prevent="handleSpaceKeypress"
+      :disabled="testState.value === 'postTest'"
     />
+    <br />
     <span>{{ `${remainingTime / 1000}`.split(".")[0] }}</span>
+    <br />
+    <span>{{ testState.value }}</span>
   </div>
 </template>
 
@@ -18,6 +23,41 @@ import { useTimer } from "@/utils/useTimer";
 import { getRandomWords } from "@/utils/words";
 import { computed, defineComponent, ref, watch } from "vue";
 import Words from "./words/Words.vue";
+import { Machine } from "xstate";
+import { useMachine } from "@xstate/vue";
+
+const START_TEST = "start";
+const END_TEST = "end";
+/**
+ * A simple state machine to keep track of which state our test should currently be in.
+ *
+ * idle: The test is ready to be run.
+ * test: The test is currently running
+ * postTest: The test has finished and results should be displayed (no other inputs are allowed at this time). It will automatically return to idle after a few seconds.
+ */
+const typeTestMachine = Machine({
+  id: "typetest",
+  initial: "idle",
+  states: {
+    idle: {
+      on: {
+        [START_TEST]: "test"
+      }
+    },
+    test: {
+      entry: "startTimer",
+      exit: "cleanUp",
+      on: {
+        [END_TEST]: "postTest"
+      }
+    },
+    postTest: {
+      after: {
+        5000: "idle"
+      }
+    }
+  }
+});
 
 /**
  * This component is responsible for managing the state of the typing test.
@@ -32,9 +72,18 @@ export default defineComponent({
     const lowerCaseInput = computed<string>(() =>
       userInput.value.toLowerCase()
     );
-    const isTestRunning = ref<boolean>(false);
-    const timer = useTimer(6000);
-
+    const testTimer = useTimer(15000); // the timer to be used during the test
+    const { state, send } = useMachine(typeTestMachine, {
+      actions: {
+        startTimer: () => {
+          testTimer.resetTimer();
+          testTimer.startTimer();
+        },
+        cleanUp: () => {
+          userInput.value = "";
+        }
+      }
+    });
     /**
      * When the user enters a space, we want to move onto the next word in the list.
      * This function will also insert more words to the list of words to type if necessary.
@@ -56,50 +105,19 @@ export default defineComponent({
       }
     };
 
-    // Store the users typed words in an array mirroring the wordsToType
-    watch(
-      [lowerCaseInput, currentWordIndex],
-      ([typedString, wordIndex], [, oldWordIndex]) => {
-        // if the input got reset from moving onto the next word, we shouldn't do anything
-        if (!typedString && wordIndex !== oldWordIndex) return;
-        // So while initially compiling, TypeScript thinks our values are Ref<unknown>
-        // We'll add a type guard to convince TypeScript that thy are the correct types
-        if (typeof wordIndex === "number" && typeof typedString === "string") {
-          typedWords.value[wordIndex] = typedString;
-        }
-      }
-    );
-
-    // If the user types something, then we will want to start the test (if it is not already started)
-    // In a similar vein, if the remaining time reaches zero, we ought to stop the test
-    watch([userInput, timer.remainingTime], () => {
-      if (!isTestRunning.value) {
-        console.log("Test running");
-        isTestRunning.value = true;
-      } else if (timer.remainingTime.value <= 0) {
-        console.log("Test stopping, time elapsed.");
-        isTestRunning.value = false;
-      }
-    });
-
-    // when the test starts and stops, manage the timer effectively.
-    watch([isTestRunning], () => {
-      if (isTestRunning.value) {
-        console.log("Starting timer.");
-        timer.startTimer();
-      } else {
-        console.log("Pausing timer.");
-        timer.pauseTimer();
-      }
-    });
-
     return {
       wordsToType,
       currentWordIndex,
       userInput,
       typedWords,
       handleSpaceKeypress,
-      remainingTime: timer.remainingTime
+      remainingTime: testTimer.remainingTime,
+      testState: state,
+      startTest: () => {
+        if (state.value.value === "idle") {
+          send(START_TEST);
+        }
+      }
     };
   }
 });

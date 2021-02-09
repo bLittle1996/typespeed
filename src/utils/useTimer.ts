@@ -74,8 +74,12 @@ export const useTimer = (durationInMs: number): Timer => {
       if (isRunning.value) {
         remainingTime.value = Math.max(0, remainingTime.value - deltaTime);
       }
-
-      if (isRunning.value && remainingTime.value > 0) {
+      // If we have no remaining time, we have completed the timer.
+      if (remainingTime.value === 0) {
+        isComplete.value = true;
+      }
+      // then, we schedule a tick as appropriate
+      if (isRunning.value && !isComplete.value) {
         requestAnimationFrame(tick);
       }
     };
