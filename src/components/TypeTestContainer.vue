@@ -26,6 +26,7 @@ import { computed, defineComponent, ref, watch } from "vue";
 import { Machine } from "xstate";
 import Words from "./words/Words.vue";
 
+const localStorageKey = "results";
 const START_TEST = "start";
 const END_TEST = "end";
 /**
@@ -52,6 +53,7 @@ const typeTestMachine = Machine({
       }
     },
     postTest: {
+      entry: "saveResults",
       after: {
         5000: "idle"
       }
@@ -82,7 +84,11 @@ export default defineComponent({
         /* Fires when exiting the test state */
         cleanUp: () => {
           userInput.value = "";
-        }
+        },
+        /**
+         * Store the user results somewhere
+         */
+        saveResults: () => {}
       }
     });
 
