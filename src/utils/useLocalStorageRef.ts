@@ -1,5 +1,5 @@
 import { Ref, ref, UnwrapRef, watch } from "vue";
-import { isDefined, isString } from "./guards";
+import { isString } from "./guards";
 
 /**
  * Writes to local storage in a predictable, parsable format for later retrieval.
