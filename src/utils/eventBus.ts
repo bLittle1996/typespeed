@@ -34,18 +34,18 @@ export const createEventBus = (): EventBus => {
     },
     off: (eventName, callback) => {
       if (!eventName) {
-        Object.keys(registeredEvents).forEach((key) => {
+        Object.keys(registeredEvents).forEach(key => {
           delete registeredEvents[key];
         });
       } else if (!callback) {
         delete registeredEvents[eventName];
       } else {
         registeredEvents[eventName] =
-          registeredEvents[eventName]?.filter((cb) => cb !== callback) ?? [];
+          registeredEvents[eventName]?.filter(cb => cb !== callback) ?? [];
       }
     },
     send: (eventName, payload) => {
-      registeredEvents[eventName]?.forEach((cb) => cb(payload));
-    },
+      registeredEvents[eventName]?.forEach(cb => cb(payload));
+    }
   };
 };

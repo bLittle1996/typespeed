@@ -21,10 +21,10 @@
 <script lang="ts">
 import { useTimer } from "@/utils/useTimer";
 import { getRandomWords } from "@/utils/words";
-import { computed, defineComponent, ref, watch } from "vue";
-import Words from "./words/Words.vue";
-import { Machine } from "xstate";
 import { useMachine } from "@xstate/vue";
+import { computed, defineComponent, ref, watch } from "vue";
+import { Machine } from "xstate";
+import Words from "./words/Words.vue";
 
 const START_TEST = "start";
 const END_TEST = "end";
@@ -79,11 +79,13 @@ export default defineComponent({
           testTimer.resetTimer();
           testTimer.startTimer();
         },
+        /* Fires when exiting the test state */
         cleanUp: () => {
           userInput.value = "";
         }
       }
     });
+
     /**
      * When the user enters a space, we want to move onto the next word in the list.
      * This function will also insert more words to the list of words to type if necessary.
@@ -104,6 +106,12 @@ export default defineComponent({
         wordsToType.value = [...wordsToType.value, ...getRandomWords(100)];
       }
     };
+
+    watch([testTimer.isComplete], ([isComplete]) => {
+      if (isComplete) {
+        send(END_TEST);
+      }
+    });
 
     return {
       wordsToType,

@@ -1,4 +1,14 @@
 import { DeepReadonly, readonly, ref, Ref, watch } from "vue";
+import { createEventBus } from "./eventBus";
+
+type TimerEvent = "started" | "tick" | "elapsed" | "stopped";
+type TimerEventPayload = {
+  isRunning: boolean;
+  isComplete: boolean;
+  remainingTime: number;
+  duration: number;
+};
+type TimerEventCallback = (payload: TimerEventPayload) => void;
 
 export interface Timer {
   /**
@@ -33,6 +43,14 @@ export interface Timer {
    * Stops the timer and sets the remaining time to be equal to the duration.
    */
   resetTimer: () => void;
+  /**
+   * Allows you to register a callback to certain events. `started`, `stopped`, `elapsed`, `tick`
+   */
+  on: (event: TimerEvent, callback: TimerEventCallback) => void;
+  /**
+   * Allows you to unregister a callback to certain, or all, events.
+   */
+  off: (event?: TimerEvent, callback?: TimerEventCallback) => void;
 }
 
 export const useTimer = (durationInMs: number): Timer => {
@@ -40,6 +58,7 @@ export const useTimer = (durationInMs: number): Timer => {
   const isRunning = ref<boolean>(false);
   const remainingTime = ref<number>(duration.value);
   const isComplete = ref<boolean>(false);
+  const bus = createEventBus();
 
   const resetTimer = () => {
     remainingTime.value = duration.value;
@@ -63,8 +82,28 @@ export const useTimer = (durationInMs: number): Timer => {
     duration.value = durationInMs;
   };
 
+  const triggerEvent = (event: TimerEvent) => {
+    bus.send(event, {
+      isRunning: isRunning.value,
+      isComplete: isComplete.value,
+      remainingTime: remainingTime.value,
+      duration: duration.value
+    });
+  };
+
+  const on = (event: TimerEvent, callback: TimerEventCallback) => {
+    bus.on(event, callback);
+  };
+
+  const off = (event?: TimerEvent, callback?: TimerEventCallback) => {
+    bus.off(event, callback);
+  };
+
   watch([isRunning], () => {
-    if (!isRunning.value) return;
+    if (!isRunning.value) {
+      triggerEvent("stopped");
+      return;
+    }
     let lastTimestamp = performance.now();
     const tick = (timestamp: number) => {
       const deltaTime = timestamp - lastTimestamp;
@@ -73,10 +112,12 @@ export const useTimer = (durationInMs: number): Timer => {
       // if we haven't paused between ticks, modify the remaining time.
       if (isRunning.value) {
         remainingTime.value = Math.max(0, remainingTime.value - deltaTime);
+        triggerEvent("tick");
       }
       // If we have no remaining time, we have completed the timer.
       if (remainingTime.value === 0) {
         isComplete.value = true;
+        triggerEvent("elapsed");
       }
       // then, we schedule a tick as appropriate
       if (isRunning.value && !isComplete.value) {
@@ -84,6 +125,7 @@ export const useTimer = (durationInMs: number): Timer => {
       }
     };
 
+    triggerEvent("started");
     requestAnimationFrame(tick);
   });
 
@@ -96,5 +138,7 @@ export const useTimer = (durationInMs: number): Timer => {
     pauseTimer,
     resetTimer,
     setDuration,
+    on,
+    off
   };
 };

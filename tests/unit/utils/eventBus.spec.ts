@@ -31,7 +31,7 @@ describe("Event Bus", () => {
     bus.send("stranger", "danger");
     bus.send("danger", "stranger");
     bus.send("spiders are evil monstrosities from the depths", {
-      object: true,
+      object: true
     });
 
     expect(spy).toHaveBeenCalledTimes(3);
